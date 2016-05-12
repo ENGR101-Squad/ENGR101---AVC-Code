@@ -31,20 +31,23 @@ extern "C" int set_PWM(int chan, int value);
 extern "C" int connect_to_server( char server_addr[15],int port);
 extern "C" int send_to_server(char message[24]);
 extern "C" int receive_from_server(char message[24]);
-#define THRESH 100
+#define THRESH 50
 int main() {
     init(0);
     open_screen_stream();
+    while(1) {
         take_picture();
-        for (int x = 150; x < 230; x++){
-            for(int y = 120; y < 210; y++) {
-                int average = get_pixel(x,y,3);
-                if (average > THRESH){
+        int y = 80;
+        for (int x = 150; x < 230; x++) {
+            //for (int y = 120; y < 210; y++) {
+                int average = get_pixel(x, y, 3);
+                if (average > THRESH) {
                     printf("1");
                 } else {
                     printf("0");
                 }
-            }
+            //}
         }
+    }
     close_screen_stream();
 }
