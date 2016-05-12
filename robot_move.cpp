@@ -35,6 +35,8 @@ extern "C" int receive_from_server(char message[24]);
 int main() {
     init(0);
     //Left is 1, right is 2
+    //do both motors run at the same speed? Or will we need to change one of the values?
+    //We will need to change a value to get it right
     set_motor(1,127);
     set_motor(2,127);
     Sleep(3,0);
