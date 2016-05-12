@@ -47,7 +47,7 @@ int main()
     int thresh = 100;
     // connect camera to the screen
     open_screen_stream();
-    // set all didgital outputs to +5V
+    // set all digital outputs to +5V
     //for (i = 0; i < 8; i++)
     //{
       // set all digital channels as outputs
@@ -104,12 +104,12 @@ void drawBW()
 		//for (int y = 1; y < 240; y++){
 			update_screen();
 			int y = 120;
-			int average = get_pixel(x,y,3);
-			if (average > 127){
-				set_pixel(x,y,255,255,255);
-			} else {
-				set_pixel(x,y,0,0,0);
-			}
+		int average = get_pixel(x,y,3);
+		if (average > 127){
+			set_pixel(x,y,255,255,255);
+		} else {
+			set_pixel(x,y,0,0,0);
+		}
 		//}
 	}
 }
