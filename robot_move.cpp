@@ -39,7 +39,7 @@ int main() {
     //We will need to change a value to get it right
     set_motor(1,255);
     set_motor(2,255);
-    Sleep(3,0);
+    Sleep(3,0); //Will this be included in the final code? Or is it just for debugging purposes?
     set_motor(1,0);
     set_motor(2,0);
 }
