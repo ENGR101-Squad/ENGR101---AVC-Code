@@ -120,6 +120,7 @@ void move(int step, int direction)
 	set_motor(1,(127*step)+direction);//left
 }
 
+// We will need to set this up soon.
 int findPid()
 {
 	//code to find PID
