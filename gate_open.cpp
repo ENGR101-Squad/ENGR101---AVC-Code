@@ -31,32 +31,14 @@ extern "C" int set_PWM(int chan, int value);
 extern "C" int connect_to_server( char server_addr[15],int port);
 extern "C" int send_to_server(char message[24]);
 extern "C" int receive_from_server(char message[24]);
-#define THRESH 50
+
 int main() {
     init(0);
-    open_screen_stream();
-        take_picture();
-        /*int y = 80;
-        for (int x = 150; x < 230; x++) {
-            //for (int y = 120; y < 210; y++) {
-                int average = get_pixel(x, y, 3);
-                if (average > THRESH) {
-                    printf("1");
-                } else {
-                    printf("0");
-                }
-            //}
-        }*/
-        int sum = 0;
-        int value;
-        for (i=0; i<320; i++){
-            value = get_pixel(i, 120, 3);
-            if(value > 160) {
-                sum += 1;
-            } else {
-                sum -= 1;
-            }
-        }
-        printf("Signal is: %d", sum);
-    close_screen_stream();
+    connect_to_server("130.195.6.196",22);
+    send_to_server("Please");
+    char message[24];
+    receive_from_server(message);
+    send_to_server(message);
+//    printf("%s", message);
+//    printf("%s", "Sent!");
 }
