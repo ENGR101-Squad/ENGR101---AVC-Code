@@ -1,5 +1,5 @@
 #include <stdio.h>
-
+#include <stdlib.h>
 //#include <pthread.h>
 #include <time.h>
 #include <string.h>
@@ -35,6 +35,7 @@ extern "C" int receive_from_server(char message[24]);
 int main() {
     init(0);
     open_screen_stream();
+    while(1) {
         take_picture();
         /*int y = 80;
         for (int x = 150; x < 230; x++) {
@@ -47,16 +48,39 @@ int main() {
                 }
             //}
         }*/
-        int sum = 0;
+
+        /*int sum = 0;
         int value;
-        for (i=0; i<320; i++){
-            value = get_pixel(i, 120, 3);
-            if(value > 160) {
+        int value1;
+        int value2;
+        for (int i = 0; i < 240; i++) {
+            value = get_pixel(120, i, 3);
+            if (value > 160) {
                 sum += 1;
             } else {
                 sum -= 1;
             }
         }
-        printf("Signal is: %d", sum);
-    close_screen_stream();
+        printf(" %d\n", sum);*/
+        bool white = false;
+        int val1;
+        int val2;
+        int sum = 0;
+        for (int x = 0; x < 319; x++) {
+            val1 = get_pixel(x,120, 3);
+            val2 = get_pixel(x+1,120, 3);
+            if(abs(val1-val2) > THRESH) {
+                white = !white;
+            }
+            if(white) {
+                if(x-160 < 0) {
+                    sum -= 1;
+                } else {
+                    sum += 1;
+                }
+            }
+        }
+        printf(" %d\n", sum);
+    }
+    //close_screen_stream();
 }
