@@ -32,6 +32,7 @@ extern "C" int connect_to_server( char server_addr[15],int port);
 extern "C" int send_to_server(char message[24]);
 extern "C" int receive_from_server(char message[24]);
 #define THRESH 20
+#define MAX_ERR 13056000
 //#define SPEED 100
 
 void move(int left, int right);
@@ -51,15 +52,11 @@ int main() {
 			currError = ((i-160)*get_pixel(i, 120, 3));
 			errorSum += currError;
 		}
-		errorSum/=6528000;
+		errorSum/=(MAX_ERR/2);
 		proportional_signal = errorSum * kp;
 		double temp = (proportional_signal)*255;
 		printf("%f\n", temp);
-		if(temp < 0) {
-			move(50, 50 - temp);
-		} else {
-			move(50 + temp, 50);
-		}
+		move(50 + temp, 50 - temp);
 		Sleep(0,100000);
 	/*ps = psum*kp-128;
 	printf("%d\n",(int)ps);
@@ -78,8 +75,7 @@ int main() {
 	printf("%d\n",p);
 
     	dsum = psum;
-	stop = get_pixel(10,10,3);*/
-		dsum = get_pixel(10,10,3);
+		*/dsum = get_pixel(10,10,3);
     }
     move(0,0);
     close_screen_stream();
