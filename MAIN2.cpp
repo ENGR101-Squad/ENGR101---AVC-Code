@@ -31,33 +31,45 @@ extern "C" int set_PWM(int chan, int value);
 extern "C" int connect_to_server( char server_addr[15],int port);
 extern "C" int send_to_server(char message[24]);
 extern "C" int receive_from_server(char message[24]);
-#define THRESH 128
-#define BASE_SPEED 40
 
 void move(int left, int right);
 
 int main() {
+    int dsum = 1;
+	double thresh;
+	double black_avg = 0;
+	double white_avg = 0;
+	double left_sensor;
+	double right_sensor;
+	int left_velocity;
+	int right_velocity;
     init(0);
-	printf("test");
-	int dsum = 1;
-	double errorSum = 0;
-	double kp = 0.5;
-	double kd = 0.5;
-	double proportional_signal;
     open_screen_stream();
+	for(int i = 0; i < 20; i++) {
+		take_picture();
+		black_avg += get_pixel(0,120,3);
+		white_avg += get_pixel(160,120,3);
+	}
+	black_avg/=20;
+	white_avg/=20;
+	thresh = white_avg + (black_avg - white_avg)/2;
     while(dsum != 0) {
-	take_picture();
-	//CODE FOR PROPORTIONAL
-		for (int i=0; i < 320; i++){
-			if(get_pixel(i, 120, 3) > THRESH) {
-				errorSum += (i-160);
-			}
+		take_picture();
+		left_sensor = get_pixel(120,120,3);
+		right_sensor = get_pixel(120,200,3);
+		if(left_sensor > thresh) {
+			left_velocity = 0;
+		} else {
+			left_velocity = 50;
 		}
-		errorSum/=160;
-		proportional_signal = errorSum * kp;
-		printf("%f\n", proportional_signal);
-		move(BASE_SPEED + proportional_signal, BASE_SPEED - proportional_signal);
-		Sleep(0,100000);
+		if(right_sensor > thresh) {
+			right_velocity = 0;
+		} else {
+			right_velocity = 50;
+		}
+		printf("Left %d", left_velocity);
+		printf("Right %d", right_velocity);
+		move(left_velocity,right_velocity);
 		dsum = get_pixel(10,10,3);
     }
     move(0,0);
