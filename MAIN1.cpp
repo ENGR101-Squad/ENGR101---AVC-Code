@@ -31,8 +31,9 @@ extern "C" int set_PWM(int chan, int value);
 extern "C" int connect_to_server( char server_addr[15],int port);
 extern "C" int send_to_server(char message[24]);
 extern "C" int receive_from_server(char message[24]);
-#define THRESH 128
+#define THRESH 80
 #define BASE_SPEED 40
+#define BASE_BACK_SPEED -50
 
 void move(int left, int right);
 
@@ -56,8 +57,12 @@ int main() {
 		errorSum/=160;
 		proportional_signal = errorSum * kp;
 		printf("%f\n", proportional_signal);
-		move(BASE_SPEED + proportional_signal, BASE_SPEED - proportional_signal);
-		Sleep(0,100000);
+		if (proportional_signal < - 0.5 && proportional_signal > -0.6){
+			move(BASE_BACK_SPEED, BASE_BACK_SPEED);
+		} else {
+			move(BASE_SPEED + proportional_signal, BASE_SPEED - proportional_signal);
+		}
+		//Sleep(0,100000);
 		dsum = get_pixel(10,10,3);
     }
     move(0,0);

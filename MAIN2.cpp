@@ -3,6 +3,7 @@
 //#include <pthread.h>
 #include <time.h>
 #include <string.h>
+#include <signal.h>
 
 // sudo gcc -Wall
 extern "C" int init_hardware();
@@ -31,52 +32,102 @@ extern "C" int set_PWM(int chan, int value);
 extern "C" int connect_to_server( char server_addr[15],int port);
 extern "C" int send_to_server(char message[24]);
 extern "C" int receive_from_server(char message[24]);
+#define THRESH 80
+#define BASE_SPEED 80
+#define BASE_BACK_SPEED -75
 
 void move(int left, int right);
+void turn90(int dir);
+void signal_callback_handler(int signum)
+{
+	//We caught sig 2 (ctrl+c)
+	printf("Caught signal %d\n",signum);
+	//Kill motors
+	set_motor(1,0);
+	set_motor(2,0);
+	// Terminate program
+	exit(signum);
+}
 
 int main() {
-    int dsum = 1;
-	double thresh;
-	double black_avg = 0;
-	double white_avg = 0;
-	double left_sensor;
-	double right_sensor;
-	int left_velocity;
-	int right_velocity;
-    init(0);
-    open_screen_stream();
-	for(int i = 0; i < 20; i++) {
+	init(0);
+	//Add a ctrl+c handler that stops the motors
+	signal(2, signal_callback_handler);
+	int dsum = 1;
+	double errorSum = 0;
+	double errorSum2 = 0;
+	double kp = 0.5;
+	double kd = 5;
+	double proportional_signal;
+	open_screen_stream();
+	//turn90(1);
+	int quad_three = 0;
+	while(dsum != 0) {
+		quad_three = 0;
 		take_picture();
-		black_avg += get_pixel(0,120,3);
-		white_avg += get_pixel(160,120,3);
-	}
-	black_avg/=20;
-	white_avg/=20;
-	thresh = white_avg + (black_avg - white_avg)/2;
-    while(dsum != 0) {
-		take_picture();
-		left_sensor = get_pixel(120,120,3);
-		right_sensor = get_pixel(120,200,3);
-		if(left_sensor > thresh) {
-			left_velocity = 0;
-		} else {
-			left_velocity = 50;
+		//CODE FOR PROPORTIONAL
+		for (int i=0; i < 320; i++){
+			if(get_pixel(i, 160, 3) > THRESH) {
+				errorSum += (i-160);
+				quad_three++;
+			}
 		}
-		if(right_sensor > thresh) {
-			right_velocity = 0;
-		} else {
-			right_velocity = 50;
+		for (int i=0; i < 320; i++){
+			if(get_pixel(i, 80, 3) > THRESH) {
+				errorSum2 += (i-160);
+			}
 		}
-		printf("Left %d", left_velocity);
-		printf("Right %d", right_velocity);
-		move(left_velocity,right_velocity);
+		printf("%d\n", quad_three);
+		errorSum/=160;
+		errorSum2/=160;
+		int derivative_signal = abs(errorSum-errorSum2)*kd;
+		if(derivative_signal > 15) {
+			derivative_signal = 40;
+		}
+		proportional_signal = errorSum * kp;
+		int leftSpeed = BASE_SPEED + proportional_signal - derivative_signal;
+		int rightSpeed = BASE_SPEED - proportional_signal - derivative_signal;
+		if (proportional_signal < - 0.5 && proportional_signal > -0.6){
+			for(int i = 0; i < 10; i++) {
+				move(BASE_BACK_SPEED, BASE_BACK_SPEED);
+			}
+		} else {
+			if(leftSpeed < 40)leftSpeed = BASE_SPEED + proportional_signal - 40;
+			if(rightSpeed < 40)rightSpeed = BASE_SPEED - proportional_signal - 40;
+			if(quad_three == 320)break;
+			move(leftSpeed, rightSpeed);
+		}
 		dsum = get_pixel(10,10,3);
-    }
-    move(0,0);
-    close_screen_stream();
+	}
+	set_motor(0,0);
+	while(dsum != 0) {
+		dsum = get_pixel(10,10,3);
+	}
+	printf("works!");
+	move(0,0);
+	close_screen_stream();
 }
 
 void move(int left, int right){
 	set_motor(1, left);
 	set_motor(2, right);
+}
+
+void turn90(int dir) {
+	printf("no\n");
+	int left;
+	int right;
+	switch(dir) {
+		case 1://Left
+			set_motor(-50,50);
+			break;
+		case 2://Right
+			set_motor(50,-50);
+			break;
+	}
+	printf("%d\n", left);
+	printf("%d\n", right);
+	for (int i = 0; i < 10; i++) {
+		move(left, right);
+	}
 }
