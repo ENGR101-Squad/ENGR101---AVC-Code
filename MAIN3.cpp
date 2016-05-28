@@ -53,13 +53,13 @@ void signal_callback_handler(int signum)
 
 int main() {
 	init(0);
-//	connect_to_server("130.195.6.196",1024);
-//	send_to_server("Please");
-//	char message[24];
-//	receive_from_server(message);
-//	send_to_server(message);
+	connect_to_server("130.195.6.196",1024);
+	send_to_server("Please");
+	char message[24];
+	receive_from_server(message);
+	send_to_server(message);
 	signal(2, signal_callback_handler);
-	int stop = 0;
+	int stop = 1;
 	double errorSum = 0;
 	double errorSum2 = 0;
 	double kp = 0.5;
@@ -121,7 +121,7 @@ int main() {
 	}
 	//move(40,40);
 	//Sleep(0,300000);
-	turn(1);
+	//turn(1);
 	move(0,0);
 	close_screen_stream();
 }
@@ -148,7 +148,7 @@ void turn(int dir) {
 	move(0,0);
 //	Sleep(0,300000);
 	int whiteC = 0;
-	while (whiteC < 40){//whiteC < 80
+	while (whiteC < 80){//whiteC < 80
 		take_picture();
 		whiteC = 0;
 		for (int i = 100; i < 220; i++){
