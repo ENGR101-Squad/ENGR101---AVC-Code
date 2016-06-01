@@ -33,8 +33,8 @@ extern "C" int connect_to_server( char server_addr[15],int port);
 extern "C" int send_to_server(char message[24]);
 extern "C" int receive_from_server(char message[24]);
 
-#define THRESH 100
-#define BASE_SPEED 73
+#define THRESH 100 //Changed from 80
+#define BASE_SPEED 73 //Changed from 80
 #define BASE_BACK_SPEED -75
 
 void move(int left, int right);
@@ -53,12 +53,15 @@ void signal_callback_handler(int signum)
 
 int main() {
 	init(0);
+	//Networking Code
 	connect_to_server("130.195.6.196",1024);
 	send_to_server("Please");
 	char message[24];
 	receive_from_server(message);
 	send_to_server(message);
+	//Signal Catcher code
 	signal(2, signal_callback_handler);
+	//Declaration of Constants for 2nd Quadrant
 	double errorSum = 0;
 	double errorSum2 = 0;
 	double kp = 0.5;
@@ -77,6 +80,7 @@ int main() {
 				quad_three++;
 			}
 		}
+		//CODE FOR FUTURE LINE ERROR
 		for (int i=0; i < 320; i++){
 			if(get_pixel(i, 80, 3) > THRESH) {
 				errorSum2 += (i-160);
@@ -84,6 +88,8 @@ int main() {
 		}
 		errorSum/=160;
 		errorSum2/=160;
+		//THIS IS NOT ACTUALLY DERIVATIVE SIGNAL - THIS CODE:
+		//Looks to see if there any curves in the line and slows down based on how curvy the curve is
 		int derivative_signal = abs(errorSum-errorSum2)*kd;
 		if(derivative_signal > 33) {
 			derivative_signal = 33;
@@ -96,8 +102,6 @@ int main() {
 				move(BASE_BACK_SPEED, BASE_BACK_SPEED);
 			}
 		} else {
-			if(leftSpeed < 40)leftSpeed = BASE_SPEED + proportional_signal - derivative_signal;
-			if(rightSpeed < 40)rightSpeed = BASE_SPEED - proportional_signal - derivative_signal;
 			if(quad_three == 320)break;
 			move(leftSpeed, rightSpeed);
 		}
@@ -126,23 +130,20 @@ int main() {
 		}
 	}
 	while (1){
-		move(60,60);
-		Sleep(5,500000);
-		move(-30,30);
-		Sleep(0,400000);
-		move(30,-30);
-		Sleep(0,400000);
-		//p(160,0.5,40,-50);
+		p(160,0.5,40,-40);//RANDOM CODE FOR QUADRANT 4
 	}
 	move(0,0);
 	close_screen_stream();
 }
 
+//Simple method to set motors.
 void move(int left, int right){
 	set_motor(1, left);
 	set_motor(2, right);
 }
 
+//Turns depending on the direction put
+//	it should turn forever until a line is detected
 void turn(int dir) {
 	move(40,40);
 	Sleep(0,300000);
@@ -172,6 +173,13 @@ void turn(int dir) {
 	Sleep(0,300000);
 }
 
+//CODE for just Proportional Signal
+// - This code takes multiple parameters
+// - y is which line to read (robot only moves if y is 160)
+// - pkp is just the proportional constant that can be changed (As quadrant three has sharp turns, this number needs to change often)
+// - base_speed is just to balance with the pkp changes
+// - threshChange is for quadrant four (we attempted to write code that can do quadrant 4 without IR Sensors hahaha)
+// This method returns whiteC
 int p(int y, double pkp, int base_speed, int threshChange){
 	int p = 0;
 	int whiteC2 = 0;
