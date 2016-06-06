@@ -28,13 +28,98 @@ extern "C" int connect_to_server( char server_addr[15],int port);
 extern "C" int send_to_server(char message[24]);
 extern "C" int receive_from_server(char message[24]);
 
-#define THRESH 100 //Changed from 80
-#define BASE_SPEED 73 //Changed from 80
+#define THRESH 120
 #define BASE_BACK_SPEED -75
+previous_signal = -2;
 
-void move(int left, int right);
-void turn(int dir);
-int p(int y, double pkp, int base_speed, int threshChange);
+//Simple method to set motors.
+void move(int left, int right){
+    set_motor(1, (int)left);
+    set_motor(2, (int)right);
+}
+
+//Turns depending on the direction put
+//	it should turn forever until a line is detected
+void turn(int dir) {
+    move(40,40);
+    Sleep(0,300000);
+    int left;
+    int right;
+    if (dir == 1){
+        left = -100;
+        right = 100;
+        printf("Moving left\n");
+    } else if (dir == 2){
+        left = 100;
+        right = -100;
+        printf("Moving right\n");
+    }
+    int pixel = 0;
+    while (pixel < THRESH){
+        take_picture();
+        pixel = get_pixel(160,120,3);
+        move(left,right);
+    }
+}
+
+//CODE for just Proportional Signal
+// - This code takes multiple parameters
+// - line is which line to read (robot only moves if line is 160)
+// - kp is just the proportional constant that can be changed (As quadrant three has sharp turns, this number needs to change often)
+// - base_speed is just to balance with the kp changes
+// - This method returns range
+bool pd(int line, double kp, double kd, int base_speed, int quadrant) {
+    double max = 0;
+    double min = 999;
+    for (int i=0; i < 320; i++){
+        if (get_pixel(i,line,3) > THRESH){
+            if (i > max)max = i;
+            if (i < min)min = i;
+        }
+    }
+    bool white = false;
+    for (int i=0; i < 320; i++){
+        if (get_pixel(i,40,3) > THRESH){
+            white = true;
+        }
+    }
+    double range = max-min; //(MAX RANGE SHOULD BE 320, MIN SHOULD BE 0)
+    double error_signal = (min+(range*0.5))/160 - 1; //error signal goes from -1 to 1 where 0 is the middle.
+    double proportional_signal = error_signal * kp;
+    double left_speed = base_speed;
+    double right_speed = base_speed;
+    if (previous_signal != -2){
+        double derivative_signal = abs(previous_signal - error_signal) * kd;
+        if (proportional_signal > 0)right_speed = right_speed - proportional_signal + derivative_signal;
+        if (proportional_signal < 0)left_speed = left_speed + proportional_signal + derivative_signal;
+    }
+    switch (quadrant) {
+        case 3:
+            if (range == 0){
+                turn(1)
+            } else if (white){
+                move(left_speed, right_speed);   
+            } else if (range < 300){
+                if (proportional_signal > 0)turn(2);
+                if (proportional_signal < 0)turn(1);
+            } else {
+                turn(1);
+            }
+            break;
+        case 2:
+            if (range == 0)back();
+            move(left_speed, right_speed);
+    }
+    
+    previous_signal = error_signal;
+    
+    return range;
+}
+
+void back() {
+    move(BASE_BACK_SPEED,BASE_BACK_SPEED);
+    Sleep(0,300000);
+}
 //This method we got off the web, it stops the program when ctrl+c is pressed.
 void signal_callback_handler(int signum) {
     //We caught sig 2 (ctrl+c)
@@ -150,74 +235,9 @@ int main() {
     }
 }
 
-//Simple method to set motors.
-void move(int left, int right){
-    set_motor(1, left);
-    set_motor(2, right);
-}
 
-//Turns depending on the direction put
-//	it should turn forever until a line is detected
-void turn(int dir) {
-    move(40,40);
-    Sleep(0,300000);
-    int left;
-    int right;
-    if (dir == 1){
-        left = -60;
-        right = 60;
-        printf("Moving left\n");
-    } else if (dir == 2){
-        left = 60;
-        right = -60;
-        printf("Moving right\n");
-    }
-    int whiteC = 0;
-    while (whiteC < 80){
-        take_picture();
-        whiteC = 0;
-        for (int i = 100; i < 220; i++){
-            if (get_pixel(i,80,3) > 127){
-                whiteC++;
-            }
-        }
-        move(left,right);
-    }
-    move(0,0);
-    Sleep(0,300000);
-}
 
-//CODE for just Proportional Signal
-// - This code takes multiple parameters
-// - y is which line to read (robot only moves if y is 160)
-// - pkp is just the proportional constant that can be changed (As quadrant three has sharp turns, this number needs to change often)
-// - base_speed is just to balance with the pkp changes
-// - threshChange is for quadrant four (we attempted to write code that can do quadrant 4 without IR Sensors hahaha)
-// This method returns whiteC
-int p(int y, double pkp, int base_speed, int threshChange){
-    int p = 0;
-    int whiteC2 = 0;
-    int whiteC = 0;
-    take_picture();
-    for (int i = 0; i < 320; i++){
-        if (get_pixel(i,y,3)>THRESH+threshChange){
-            p += i-160;
-            whiteC += 1;
-        }
-    }
-    for (int i = 0; i <320; i++){
-        if (get_pixel(i,80,3)>THRESH+threshChange){
-            whiteC2 += 1;
-        }
-    }
-    p = p*pkp/160;
-    if (y == 160){
-        if (whiteC == 0){
-            move(BASE_BACK_SPEED,BASE_BACK_SPEED);
-            Sleep(0,300000);
-        } else {
-            move(base_speed+p,base_speed-p);
-        }
-    }
-    return whiteC;
-}
+
+
+
+
